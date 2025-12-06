@@ -73,7 +73,24 @@ exports.getAllServices = async (req, res) => {
             from: 'subservices',
             localField: '_id',
             foreignField: 'service',
+            pipeline: [
+              { $project: { name: 1, slug: 1, image: 1 } } // Optimisation: Select only needed fields
+            ],
             as: 'subServices'
+          }
+        },
+        {
+          $project: {
+            name: 1,
+            description: 1,
+            image: 1,
+            slug: 1,
+            isActive: 1,
+            subServices: {
+              name: 1,
+              slug: 1,
+              image: 1
+            }
           }
         },
         { $sort: { name: 1 } }
