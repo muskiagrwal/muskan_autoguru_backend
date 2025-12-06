@@ -34,6 +34,11 @@ const SubServiceSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
+    compatibility: [{
+      make: { type: String, required: true },
+      model: { type: String, default: "" },
+      variant: { type: String, default: "" }
+    }],
   },
   { timestamps: true }
 );

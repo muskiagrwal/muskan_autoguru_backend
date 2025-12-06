@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/upload'); 
+const upload = require('../middleware/upload');
 
 //SERVICE controller path
 const {
@@ -8,7 +8,8 @@ const {
     getAllServices,
     getServiceById,
     updateService,
-    deleteService
+    deleteService,
+    getCompatibleServices
 } = require('../controllers/service.controller');
 
 //SUB-SERVICE controller path
@@ -18,7 +19,8 @@ const {
     getSubServicesByServiceId,
     getSubServiceById,
     updateSubService,
-    deleteSubService
+    deleteSubService,
+    getCompatibleSubServices
 } = require('../controllers/subService.controller');
 
 //SERVICE 
@@ -35,5 +37,10 @@ router.get('/sub-services/service/:serviceId', getSubServicesByServiceId); // Ge
 router.get('/sub-services/:id', getSubServiceById);
 router.put('/sub-services/:id', upload.single('image'), updateSubService);
 router.delete('/sub-services/:id', deleteSubService);
+router.post('/sub-services/compatible', getCompatibleSubServices);
+
+
+// compatible services
+router.post('/compatible', getCompatibleServices);
 
 module.exports = router;

@@ -6,7 +6,7 @@ const { uploadToCloudinary } = require("../config/uploadToCloudinary");
 // POST -> Create SubService
 exports.createSubService = async (req, res) => {
   try {
-    const { service, name, description, price } = req.body;
+    const { service, name, description, price, compatibility } = req.body;
 
     // Validate Parent Service
     const serviceExists = await Service.findById(service);
@@ -45,6 +45,7 @@ exports.createSubService = async (req, res) => {
       description: description || "",
       price: price || 0,
       image: finalImageUrl,
+      compatibility: compatibility || [],
     });
 
     // UPDATE COUNT: Increment count in Parent Service
@@ -113,10 +114,23 @@ exports.getSubServicesByServiceId = async (req, res) => {
 // GET -> Get Single SubService
 exports.getSubServiceById = async (req, res) => {
   try {
-    const subService = await SubService.findById(req.params.id).populate(
-      "service",
-      "name description"
-    );
+    const { id } = req.params;
+    let subService;
+
+    // Check if id is a valid ObjectId
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      subService = await SubService.findById(id).populate(
+        "service",
+        "name description"
+      );
+    } else {
+      // If not ObjectId, try finding by slug
+      // Note: slugs are usually unique, but ensure your schema enforces it
+      subService = await SubService.findOne({ slug: id }).populate(
+        "service",
+        "name description"
+      );
+    }
 
     if (!subService) {
       return response.sendNotFound(res, "SubService not found");
@@ -134,7 +148,7 @@ exports.getSubServiceById = async (req, res) => {
 // PUT -> Update SubService
 exports.updateSubService = async (req, res) => {
   try {
-    const { service, name, description, price, image } = req.body;
+    const { service, name, description, price, image, compatibility } = req.body;
 
     const subService = await SubService.findById(req.params.id);
     if (!subService) {
@@ -193,6 +207,7 @@ exports.updateSubService = async (req, res) => {
       description !== undefined ? description : subService.description;
     subService.price = price !== undefined ? price : subService.price;
     subService.image = finalImageUrl;
+    if (compatibility) subService.compatibility = compatibility;
 
     await subService.save();
     await subService.populate("service", "name");
@@ -227,5 +242,51 @@ exports.deleteSubService = async (req, res) => {
   } catch (error) {
     console.error("Delete sub-service error:", error);
     response.sendError(res, 500, "Server error while deleting sub-service");
+  }
+};
+
+// POST -> Get Compatible SubServices for a Service and Vehicle
+exports.getCompatibleSubServices = async (req, res) => {
+  try {
+    const { serviceId, make, model } = req.body;
+
+    if (!serviceId) {
+      return response.sendError(res, 400, "Service ID is required");
+    }
+
+    let filter = {
+      service: serviceId,
+      $or: [
+        { compatibility: { $size: 0 } }, // Universal
+        // Match specific vehicle
+        ...(make ? [{
+          compatibility: {
+            $elemMatch: {
+              make: { $regex: new RegExp(`^${make}$`, 'i') },
+              $or: [
+                { model: { $regex: new RegExp(`^${model}$`, 'i') } },
+                { model: "" },
+                { model: null }
+              ]
+            }
+          }
+        }] : [])
+      ]
+    };
+
+    const subServices = await SubService.find(filter)
+      .populate("service", "name")
+      .sort({ name: 1 });
+
+    // Fetch parent service details for UI context
+    const parentService = await Service.findById(serviceId);
+
+    response.sendSuccess(res, 200, "Compatible sub-services fetched", {
+      subServices,
+      parentService: parentService ? parentService.name : 'Service',
+    });
+  } catch (error) {
+    console.error("Get compatible sub-services error:", error);
+    response.sendError(res, 500, "Server error while fetching compatible sub-services");
   }
 };

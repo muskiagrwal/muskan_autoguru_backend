@@ -19,6 +19,7 @@ const uploadRoutes = require('./routes/upload.routes');
 const brandRoutes = require('./routes/vehicleBrand.routes');
 const serviceRoutes = require('./routes/service.routes');
 const b2bRoutes = require('./routes/b2b.routes');
+const carDataRoutes = require('./routes/carData.routes');
 // Import middleware
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
@@ -88,6 +89,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/b2b', b2bRoutes);
+app.use('/api/cardata', carDataRoutes);
 
 // 404 Handler - Must be after all routes
 app.use(notFoundHandler);
