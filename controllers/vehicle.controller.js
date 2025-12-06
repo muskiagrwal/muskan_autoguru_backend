@@ -5,7 +5,7 @@ const { successResponse, errorResponse } = require('../utils/response');
 exports.addVehicle = async (req, res, next) => {
     try {
         const vehicle = await Vehicle.create({
-            userId: req.user.id,
+            userId: req.user.userId,
             ...req.body
         });
 
@@ -22,7 +22,7 @@ exports.addVehicle = async (req, res, next) => {
 // Get all vehicles for logged-in user
 exports.getUserVehicles = async (req, res, next) => {
     try {
-        const vehicles = await Vehicle.find({ userId: req.user.id })
+        const vehicles = await Vehicle.find({ userId: req.user.userId })
             .sort({ createdAt: -1 });
 
         return successResponse(res, vehicles, 'Vehicles retrieved successfully');
@@ -40,7 +40,7 @@ exports.getVehicleById = async (req, res, next) => {
             return errorResponse(res, 'Vehicle not found', 404);
         }
 
-        if (vehicle.userId.toString() !== req.user.id) {
+        if (vehicle.userId.toString() !== req.user.userId) {
             return errorResponse(res, 'Not authorized to view this vehicle', 403);
         }
 
@@ -59,7 +59,7 @@ exports.updateVehicle = async (req, res, next) => {
             return errorResponse(res, 'Vehicle not found', 404);
         }
 
-        if (vehicle.userId.toString() !== req.user.id) {
+        if (vehicle.userId.toString() !== req.user.userId) {
             return errorResponse(res, 'Not authorized to update this vehicle', 403);
         }
 
@@ -83,7 +83,7 @@ exports.deleteVehicle = async (req, res, next) => {
             return errorResponse(res, 'Vehicle not found', 404);
         }
 
-        if (vehicle.userId.toString() !== req.user.id) {
+        if (vehicle.userId.toString() !== req.user.userId) {
             return errorResponse(res, 'Not authorized to delete this vehicle', 403);
         }
 

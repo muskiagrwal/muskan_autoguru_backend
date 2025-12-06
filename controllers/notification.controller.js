@@ -9,7 +9,7 @@ exports.getUserNotifications = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
-        const filter = { userId: req.user.id };
+        const filter = { userId: req.user.userId };
 
         // Filter by read status if provided
         if (req.query.unreadOnly === 'true') {
@@ -24,7 +24,7 @@ exports.getUserNotifications = async (req, res, next) => {
             .limit(limit);
 
         const unreadCount = await Notification.countDocuments({
-            userId: req.user.id,
+            userId: req.user.userId,
             isRead: false
         });
 
@@ -48,7 +48,7 @@ exports.markAsRead = async (req, res, next) => {
     try {
         const notification = await Notification.findOne({
             _id: req.params.id,
-            userId: req.user.id
+            userId: req.user.userId
         });
 
         if (!notification) {
@@ -69,7 +69,7 @@ exports.markAsRead = async (req, res, next) => {
 exports.markAllAsRead = async (req, res, next) => {
     try {
         const result = await Notification.updateMany(
-            { userId: req.user.id, isRead: false },
+            { userId: req.user.userId, isRead: false },
             { isRead: true, readAt: new Date() }
         );
 
@@ -86,7 +86,7 @@ exports.deleteNotification = async (req, res, next) => {
     try {
         const notification = await Notification.findOneAndDelete({
             _id: req.params.id,
-            userId: req.user.id
+            userId: req.user.userId
         });
 
         if (!notification) {

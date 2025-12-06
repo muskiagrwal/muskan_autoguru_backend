@@ -3,6 +3,8 @@ const router = express.Router();
 const homeServiceController = require('../controllers/homeService.controller');
 const { validate } = require('../middleware/validator');
 const { homeServiceSchema } = require('../middleware/validationSchemas');
+const { authenticateToken } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/checkRole');
 
 /**
  * Home Service Routes
@@ -12,17 +14,10 @@ const { homeServiceSchema } = require('../middleware/validationSchemas');
 // Public routes
 router.post('/', homeServiceSchema, validate, homeServiceController.createHomeService);
 
-// Admin routes (protected) - To be implemented
-// Get all home service bookings
-router.get('/', homeServiceController.getAllHomeServices);
-
-// Get specific home service booking by ID
-router.get('/:id', homeServiceController.getHomeServiceById);
-
-// Update home service booking
-router.put('/:id', homeServiceController.updateHomeService);
-
-// Delete home service booking
-router.delete('/:id', homeServiceController.deleteHomeService);
+// Admin routes (protected)
+router.get('/', authenticateToken, requireAdmin, homeServiceController.getAllHomeServices);
+router.get('/:id', authenticateToken, requireAdmin, homeServiceController.getHomeServiceById);
+router.put('/:id', authenticateToken, requireAdmin, homeServiceController.updateHomeService);
+router.delete('/:id', authenticateToken, requireAdmin, homeServiceController.deleteHomeService);
 
 module.exports = router;

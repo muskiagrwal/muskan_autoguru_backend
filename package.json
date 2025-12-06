@@ -22,7 +22,6 @@
     "author": "AutoGuru Team",
     "license": "ISC",
     "dependencies": {
-        "axios": "^1.13.2",
         "bcryptjs": "^2.4.3",
         "cloudinary": "^2.8.0",
         "cors": "^2.8.5",
@@ -37,6 +36,7 @@
         "streamifier": "^0.1.1"
     },
     "devDependencies": {
+        "axios": "^1.13.2",
         "nodemon": "^3.0.1"
     }
 }
