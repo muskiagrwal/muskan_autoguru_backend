@@ -25,6 +25,23 @@ const signup = async (req, res) => {
         });
     }
 
+    // Security: Prevent admin role assignment through regular signup
+    if (role && role.toLowerCase() === 'admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Admin accounts cannot be created through regular signup. Please contact an administrator.'
+        });
+    }
+
+    // Validate allowed roles
+    const allowedRoles = ['user', 'mechanic', 'supplier'];
+    if (role && !allowedRoles.includes(role.toLowerCase())) {
+        return res.status(400).json({
+            success: false,
+            message: `Invalid role. Allowed roles: ${allowedRoles.join(', ')}`
+        });
+    }
+
     try {
         // Check if email already exists
         const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -670,6 +687,111 @@ const updatePassword = async (req, res) => {
  */
 const changePassword = updatePassword;
 
+/**
+ * Admin Signup
+ * Special endpoint for creating admin accounts
+ * Requires either:
+ * 1. ADMIN_SETUP_SECRET header (for first admin setup when no admins exist)
+ * 2. Authentication as an existing admin
+ * @route POST /api/auth/admin/signup
+ */
+const adminSignup = async (req, res) => {
+    const { firstName, lastName, email, password } = req.body;
+    const setupSecret = req.headers['x-admin-setup-secret'];
+
+    // Validation
+    if (!firstName || !lastName || !email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'All fields are required'
+        });
+    }
+
+    try {
+        // Check if email already exists
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'An account with this email already exists'
+            });
+        }
+
+        // Check if any admin exists
+        const adminExists = await User.findOne({ role: 'admin' });
+
+        // Determine authentication method
+        if (!adminExists) {
+            // First admin setup - require setup secret
+            const expectedSecret = process.env.ADMIN_SETUP_SECRET;
+
+            if (!expectedSecret) {
+                logger.error('ADMIN_SETUP_SECRET not configured in environment');
+                return res.status(500).json({
+                    success: false,
+                    message: 'Admin setup is not configured. Please contact system administrator.'
+                });
+            }
+
+            if (!setupSecret || setupSecret !== expectedSecret) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Invalid setup secret. First admin creation requires valid ADMIN_SETUP_SECRET header.'
+                });
+            }
+
+            logger.info('Creating first admin account with setup secret');
+        } else {
+            // Subsequent admins - require admin authentication
+            if (!req.user || req.user.role !== 'admin') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Only existing admins can create new admin accounts'
+                });
+            }
+
+            logger.info(`Admin account creation requested by: ${req.user.email}`);
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create new admin user
+        const newAdmin = new User({
+            firstName,
+            lastName,
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            role: 'admin'
+        });
+
+        // Save to database
+        await newAdmin.save();
+
+        logger.success(`New admin account created: ${newAdmin.email}`);
+
+        // Return admin without password
+        res.status(201).json({
+            success: true,
+            message: 'Admin account created successfully',
+            user: {
+                id: newAdmin._id,
+                firstName: newAdmin.firstName,
+                lastName: newAdmin.lastName,
+                email: newAdmin.email,
+                role: newAdmin.role,
+                createdAt: newAdmin.createdAt
+            }
+        });
+    } catch (error) {
+        logger.error('Admin signup error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error creating admin account'
+        });
+    }
+};
+
 module.exports = {
     signup,
     login,
@@ -684,5 +806,7 @@ module.exports = {
     updateProfile,
     updateEmail,
     updatePassword,
-    changePassword
+    changePassword,
+    adminSignup
 };
+
