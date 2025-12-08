@@ -15,6 +15,14 @@ const { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema }
 router.post('/signup', registerSchema, validate, authController.signup);
 router.post('/login', loginSchema, validate, authController.login);
 
+// Admin Registration Route
+// Uses optionalAuth to allow either:
+// 1. Setup secret header (for first admin when no admins exist)
+// 2. Admin JWT authentication (for subsequent admins)
+const { optionalAuth } = require('../middleware/auth');
+router.post('/admin/signup', optionalAuth, authController.adminSignup);
+
+
 // OTP Routes (Public - need email to send OTP)
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/resend-otp', authController.resendOtp);

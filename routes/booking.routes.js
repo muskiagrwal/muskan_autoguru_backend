@@ -26,17 +26,16 @@ router.post(
 router.get('/', bookingController.getUserBookings);
 
 // Get specific booking by ID
-router.get('/:id', authenticateToken, bookingController.getBookingById);
+router.get('/:id', bookingController.getBookingById);
 
 // Update booking
 router.put(
     '/:id',
-    authenticateToken,
     sanitizeFields(['notes']),
     bookingController.updateBooking
 );
 
 // Delete booking
-router.delete('/:id', authenticateToken, bookingController.deleteBooking);
+router.delete('/:id', bookingController.deleteBooking);
 
 module.exports = router;
